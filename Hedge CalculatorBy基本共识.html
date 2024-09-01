@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>足彩组合和投注计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size:40px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .main-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .container, .section {
+            max-width: 1200px;
+            margin: 10px;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 1px;
+        }
+        .section {
+            width: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid rgb(179, 44, 44);
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .remove-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background-color: #FE293E;
+            color: white;
+            border: none;
+            border-radius: 1px;
+            cursor: pointer;
+        }
+        .section input{
+            width: 92%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 1px;
+        }
+        .section button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background-color: #FE293E;
+            color: white;
+            border: none;
+            border-radius: 1px;
+            cursor: pointer;
+        }
+        .section button:hover {
+            background-color: #ff4545;
+        }
+        .section input[readonly] {
+            background-color: #ffffff;
+            cursor: not-allowed;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        button1 {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            padding: 1px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 1px;
+            cursor: pointer;
+        }
+        button2 {
+            font-family: Arial, sans-serif;
+            font-size: 6px;
+            padding: 1px;
+            margin-top: 1px;
+            border: none;
+            border-radius: 1px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>投资有风险 请保持理性</h1>
+
+    <div class="main-container">
+        <div class="section">
+            <h2>我今天想得到多少呢？</h2>
+            <div id="profit-inputs">
+                <!-- 动态添加的名称和赔率输入组会出现在这里 -->
+            </div>
+            <button onclick="addProfitInput()">添加</button><br>
+            <label for="desiredProfit">我今天想得到:</label>
+            <input type="text" id="desiredProfit"><br>
+            <button onclick="calculate20Profit()">请帮我计算</button>
+            <h3 id="profitTitle">你可以这样分配</h3>
+            <div id="profit-results">
+                <!-- 结果会显示在这里 -->
+            </div>
+            <h3>你今天需要投入</h3>
+            <label for="totalInvestment20">共计:</label>
+            <input type="text" id="totalInvestment20" readonly><br>
+        </div>
+
+        <div class="section">
+            <h2>我只想投入这么多！</h2>
+            <div id="max-profit-inputs">
+                <!-- 动态添加的名称和赔率输入组会出现在这里 -->
+            </div>
+            <button onclick="addMaxProfitInput()">添加</button><br>
+            <label for="totalInvestmentMax">我只想投入:</label>
+            <input type="text" id="totalInvestmentMax"><br>
+            <button onclick="calculateMaxProfit()">请帮我计算</button>
+            <h3 id="maxProfitTitle">你可以这样分配</h3>
+            <div id="max-profit-results">
+                <!-- 结果会显示在这里 -->
+            </div>
+            <h3 id="maxNetProfitTitle">你今天可能会得到</h3>
+        </div>
+
+        <div class="section">
+            <h2>根据我认为的概率</h2>
+
+            <div class="main-container">
+                <div class="section">
+                    <h2>(目前作用不大)</h2>
+                    <div id="hedge-inputs">
+                        <!-- 动态生成输入组 -->
+                    </div>
+                    <button onclick="addHedgeInput()">添加</button><br>
+                    <label for="totalInvestment">你今天想投入: </label>
+                    <input type="number" id="totalInvestment"><br><br>
+                    <button onclick="calculateHedge()">请帮我计算</button>
+                    <div class="result" id="result"></div>
+                </div>
+            </div>
+
+            <script>
+                let inputIndex = 0;
+                let profitIndex = 0;
+                let maxProfitIndex = 0;
+
+                function addHedgeInput() {
+                    inputIndex++;
+                    const container = document.getElementById('hedge-inputs');
+                    const div = document.createElement('div');
+                    div.className = 'input-group';
+                    div.id = `hedgeGroup${inputIndex}`;
+                    div.innerHTML = `
+                        <label for="name${inputIndex}">比赛结果:</label>
+                        <input type="text" id="name${inputIndex}"><br>
+                        <label for="prob${inputIndex}">概率 (%):</label>
+                        <input type="number" id="prob${inputIndex}" min="0" max="100"><br>
+                        <label for="odds${inputIndex}">赔率:</label>
+                        <input type="number" step="0.01" id="odds${inputIndex}"><br>
+                        <button class="remove-btn" onclick="removeHedgeInput(${inputIndex})">删除</button>
+                    `;
+                    container.appendChild(div);
+                }
+
+                function removeHedgeInput(index) {
+                    const groupDiv = document.getElementById(`hedgeGroup${index}`);
+                    groupDiv.remove();
+                }
+
+                function addProfitInput() {
+                    profitIndex++;
+                    const container = document.getElementById('profit-inputs');
+                    const div = document.createElement('div');
+                    div.className = 'input-group';
+                    div.id = `profitGroup${profitIndex}`;
+                    div.innerHTML = `
+                        <label for="name${profitIndex}">比赛结果 ${profitIndex}:</label>
+                        <input type="text" id="name${profitIndex}"><br>
+                        <label for="odds${profitIndex}">对应赔率 ${profitIndex}:</label>
+                        <input type="text" id="odds${profitIndex}"><br>
+                    `;
+                    container.appendChild(div);
+                }
+
+                function addMaxProfitInput() {
+                    maxProfitIndex++;
+                    const container = document.getElementById('max-profit-inputs');
+                    const div = document.createElement('div');
+                    div.className = 'input-group';
+                    div.id = `maxProfitGroup${maxProfitIndex}`;
+                    div.innerHTML = `
+                        <label for="nameMax${maxProfitIndex}">比赛结果 ${maxProfitIndex}:</label>
+                        <input type="text" id="nameMax${maxProfitIndex}"><br>
+                        <label for="oddsMax${maxProfitIndex}">对应赔率 ${maxProfitIndex}:</label>
+                        <input type="text" id="oddsMax${maxProfitIndex}"><br>
+                    `;
+                    container.appendChild(div);
+                }
+
+                function calculateHedge() {
+                    const totalInvestment = parseFloat(document.getElementById('totalInvestment').value) || 0;
+                    const groupNames = [];
+                    const probabilities = [];
+                    const odds = [];
+
+                    // 收集所有有效的组名、概率和赔率
+                    for (let i = 1; i <= inputIndex; i++) {
+                        const groupName = document.getElementById(`name${i}`)?.value;
+                        const probValue = parseFloat(document.getElementById(`prob${i}`)?.value);
+                        const oddsValue = parseFloat(document.getElementById(`odds${i}`)?.value);
+
+                        if (groupName && !isNaN(probValue) && !isNaN(oddsValue) && probValue > 0 && oddsValue > 0) {
+                            groupNames.push(groupName);
+                            probabilities.push(probValue / 100);  // 将概率转换为百分比
+                            odds.push(oddsValue);
+                        }
+                    }
+
+                    if (probabilities.length === 0 || odds.length === 0) {
+                        alert("请至少输入一组有效的组名、概率和赔率。");
+                        return;
+                    }
+
+                    // 初始化投注金额
+                    const stakes = new Array(probabilities.length).fill(0);
+                    let totalStakes = 0;
+
+                    // 计算每个选项的投注金额，使最低概率的选项不会亏损
+                    probabilities.forEach((prob, index) => {
+                        stakes[index] = totalInvestment / odds[index];
+                        totalStakes += stakes[index];
+                    });
+
+                    // 调整投注金额使其总和等于总下注金额
+                    stakes.forEach((stake, index) => {
+                        stakes[index] = (stake / totalStakes) * totalInvestment;
+                    });
+
+                    // 计算净利润
+                    const profits = stakes.map((stake, index) => stake * odds[index] - totalInvestment);
+
+                    // 显示结果
+                    let resultHTML = "";
+                    stakes.forEach((stake, index) => {
+                        resultHTML += `
+                            <span style="font-size: 12px;">在 ${groupNames[index]} :</span><br>
+                            <span style="font-size: 12px;">你可以投入:</span> ${stake.toFixed(2)}<br>
+                            <span style="font-size: 12px;">如果正确可以得到:</span> ${profits[index].toFixed(2)}<br><br>
+                        `;
+                    });
+
+                    document.getElementById('result').innerHTML = `
+                        ${resultHTML}
+                        <span style="font-size: 12px;">你今天确定要投入:</span> ${totalInvestment.toFixed(2)}吗？<br>
+                    `;
+                }
+
+                function clearInputs(suffix) {
+                    const resultContainer = suffix === "20" ? document.getElementById('profit-results') : document.getElementById('max-profit-results');
+                    resultContainer.innerHTML = '';  // 清空结果容器
+                    if (suffix === "20") {
+                        document.getElementById(`totalInvestment20`).value = "";
+                    }
+                    if (suffix === "Max") {
+                        document.getElementById("maxNetProfitTitle").innerText = "";
+                        document.getElementById("maxProfitTitle").innerText = "";
+                    }
+                }
+
+                function calculateProfit(bets, odds) {
+                    const totalBets = bets.reduce((sum, bet) => sum + bet, 0);
+                    return odds.map((odd, index) => odd * bets[index] - totalBets);
+                }
+
+                function findOptimalBets(targetProfit, odds, initialGuess, step, maxIterations) {
+                    let bets = [...initialGuess];
+
+                    for (let i = 0; i < maxIterations; i++) {
+                        const profits = calculateProfit(bets, odds);
+
+                        if (profits.every(profit => Math.abs(profit - targetProfit) < 0.01)) {
+                            return { bets, profits };
+                        }
+
+                        for (let j = 0; j < bets.length; j++) {
+                            if (profits[j] > targetProfit) {
+                                bets[j] -= step;
+                            } else {
+                                bets[j] += step;
+                            }
+                        }
+                    }
+
+                    return { bets, profits: calculateProfit(bets, odds) };
+                }
+
+                function calculate20Profit() {
+                    clearInputs("20");
+
+                    let odds = [];
+                    let names = [];
+                    for (let i = 1; i <= profitIndex; i++) {
+                        let oddsInput = document.getElementById(`odds${i}`).value;
+                        let nameInput = document.getElementById(`name${i}`).value;
+                        if (oddsInput && nameInput) {
+                            try {
+                                odds.push(eval(oddsInput)); // 使用 eval 来解析倍率表达式
+                            } catch (e) {
+                                alert(`无效的赔率输入: ${oddsInput}`);
+                                return;
+                            }
+                            names.push(nameInput);
+                        }
+                    }
+
+                    if (odds.length === 0) {
+                        alert("请至少输入一个对应赔率和比赛结果。");
+                        return;
+                    }
+
+                    let desiredProfit = parseFloat(document.getElementById("desiredProfit").value);
+                    if (isNaN(desiredProfit)) {
+                        alert("请输入有效的净利润值。");
+                        return;
+                    }
+
+                    const initialGuess = Array(odds.length).fill(10);
+                    const step = 0.01;
+                    const maxIterations = 100000;
+
+                    const result = findOptimalBets(desiredProfit, odds, initialGuess, step, maxIterations);
+
+                    const resultContainer = document.getElementById('profit-results');
+                    result.bets.forEach((amount, index) => {
+                        const betInput = document.createElement('input');
+                        betInput.value = amount.toFixed(2);
+                        betInput.setAttribute('readonly', true);
+
+                        const label = document.createElement('label');
+                        label.innerText = ` 需要在 ${names[index]}投入:`;
+
+                        resultContainer.appendChild(label);
+                        resultContainer.appendChild(betInput);
+                        resultContainer.appendChild(document.createElement('br'));
+                    });
+
+                    const totalInvestment20 = result.bets.reduce((acc, amount) => acc + amount, 0);
+                    document.getElementById("totalInvestment20").value = totalInvestment20.toFixed(2);
+
+                    document.getElementById("profitTitle").innerText = `你今天想得到${desiredProfit}可以这样分配`;
+                }
+
+                function calculateMaxProfit() {
+                    clearInputs("Max");
+
+                    let odds = [];
+                    let names = [];
+                    for (let i = 1; i <= maxProfitIndex; i++) {
+                        let oddsInput = document.getElementById(`oddsMax${i}`).value;
+                        let nameInput = document.getElementById(`nameMax${i}`).value;
+                        if (oddsInput && nameInput) {
+                            try {
+                                odds.push(eval(oddsInput)); // 使用 eval 来解析倍率表达式
+                            } catch (e) {
+                                alert(`无效的赔率输入: ${oddsInput}`);
+                                return;
+                            }
+                            names.push(nameInput);
+                        }
+                    }
+
+                    if (odds.length === 0) {
+                        alert("请至少输入一个对应赔率和比赛结果。");
+                        return;
+                    }
+
+                    let totalInvestmentMax = parseFloat(document.getElementById("totalInvestmentMax").value);
+                    if (isNaN(totalInvestmentMax)) {
+                        alert("请输入有效的总投资值。");
+                        return;
+                    }
+
+                    let minBets = odds.map(oddsValue => 100 / oddsValue);
+
+                    let baseTotal = minBets.reduce((acc, amount) => acc + amount, 0);
+
+                    if (totalInvestmentMax < baseTotal) {
+                        alert("总投资不足以覆盖最低投注需求，请增加总投资或调整赔率。");
+                        return;
+                    }
+
+                    let remainingFunds = totalInvestmentMax - baseTotal;
+
+                    let increaseRatio = remainingFunds / baseTotal;
+
+                    let finalBets = minBets.map(amount => amount * (1 + increaseRatio));
+
+                    const resultContainer = document.getElementById('max-profit-results');
+                    let maxProfit = 0;
+                    finalBets.forEach((amount, index) => {
+                        const betInput = document.createElement('input');
+                        betInput.value = amount.toFixed(2);
+                        betInput.setAttribute('readonly', true);
+
+                        const label = document.createElement('label');
+                        label.innerText = `可以在 ${names[index]}投入:`;
+
+                        resultContainer.appendChild(label);
+                        resultContainer.appendChild(betInput);
+                        resultContainer.appendChild(document.createElement('br'));
+
+                        const profit = amount * odds[index] - totalInvestmentMax;
+                        const profitInput = document.createElement('input');
+                        profitInput.value = profit.toFixed(2);
+                        profitInput.setAttribute('readonly', true);
+
+                        const profitLabel = document.createElement('label');
+                        profitLabel.innerText = ` ${names[index]}如果正确，去掉总投入后你可以得到:`;
+
+                        resultContainer.appendChild(profitLabel);
+                        resultContainer.appendChild(profitInput);
+                        resultContainer.appendChild(document.createElement('br'));
+
+                        if (profit > maxProfit) {
+                            maxProfit = profit;
+                        }
+                    });
+
+                    document.getElementById("maxProfitTitle").innerText = `你可以这样分配`;
+                    document.getElementById("maxNetProfitTitle").innerText = `按照你今天的投入最多可能得到: ${maxProfit.toFixed(2)} `;
+                }
+
+                // 初始化一个默认的输入组
+                addHedgeInput();
+
+            </script>
+        </div>
+    </div>
+    <button1><h1></h1></button1>
+    <button2><h2>Odds Combination and Profit Calculator_1.13<br><br>by <button1>基本共识</button1></h2></button2>
+    
+</body>
+</html>
